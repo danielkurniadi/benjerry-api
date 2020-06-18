@@ -214,7 +214,8 @@ func (handler *ProductHandler) handleUpdateProduct() http.HandlerFunc {
 
 		if err != nil {
 			status := getAppErrorStatus(err)
-			writeErrorMessage(w, err.Error(), status)
+			msg := getErrorMessage(err, handler.trans)
+			writeErrorMessage(w, msg, status)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -234,7 +235,8 @@ func (handler *ProductHandler) handleDeleteProduct() http.HandlerFunc {
 
 		if err != nil {
 			status := getAppErrorStatus(err)
-			writeErrorMessage(w, err.Error(), status)
+			msg := getErrorMessage(err, handler.trans)
+			writeErrorMessage(w, msg, status)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -244,8 +246,11 @@ func (handler *ProductHandler) handleDeleteProduct() http.HandlerFunc {
 // getErrorMessage infers the error struct type
 // and translates the error message to get client-friendly message
 func getErrorMessage(err error, trans ut.Translator) string {
-	switch err.(type) {
+	if err == nil {
+		return ""
+	}
 
+	switch err.(type) {
 	case *json.UnmarshalTypeError:
 		e, _ := err.(*json.UnmarshalTypeError)
 		return e.Field + " field must be of type " + e.Type.String()
@@ -258,7 +263,7 @@ func getErrorMessage(err error, trans ut.Translator) string {
 		return strings.Join(fieldErrs, "\n")
 	}
 
-	return ""
+	return err.Error()
 }
 
 // writerErrorMessage is a helper that writes error message to response
@@ -270,7 +275,16 @@ func writeErrorMessage(writer http.ResponseWriter, errMsg string, httpStatus int
 // getAppErrorStatus inputs error from application
 // and infers the appropriate HTTP status to be returned
 func getAppErrorStatus(err error) int {
+	if err == nil {
+		return http.StatusOK
+	}
+
 	var status int
+	switch err.(type) {
+	case *json.SyntaxError, *json.UnmarshalTypeError, *validator.ValidationErrors:
+		return http.StatusBadRequest
+	}
+
 	if err == domain.ErrResourceNotFound { // TODO: check against error
 		status = http.StatusNotFound
 	} else if err == domain.ErrConflict {
@@ -278,5 +292,6 @@ func getAppErrorStatus(err error) int {
 	} else {
 		status = http.StatusInternalServerError
 	}
+
 	return status
 }
