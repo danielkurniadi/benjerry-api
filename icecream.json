@@ -1,0 +1,127 @@
+[
+    {
+        "name": "Vanilla Toffee Bar Crunch",
+        "image_closed": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/vanilla-toffee-landing.png",
+        "image_open": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/vanilla-toffee-landing-open.png",
+        "description": "Vanilla Ice Cream with Fudge-Covered Toffee Pieces",
+        "story": "Vanilla What Bar Crunch? We gave this flavor a new name to go with the new toffee bars we’re using as part of our commitment to source Fairtrade Certified and non-GMO ingredients. We love it and know you will too!",
+        "sourcing_values": [
+            "Non-GMO",
+            "Cage-Free Eggs",
+            "Fairtrade",
+            "Responsibly Sourced Packaging",
+            "Caring Dairy"
+        ],
+        "ingredients": [
+            "cream",
+            "skim milk",
+            "liquid sugar",
+            "water",
+            "sugar",
+            "coconut oil",
+            "egg yolks",
+            "butter",
+            "vanilla extract",
+            "almonds",
+            "cocoa (processed with alkali)",
+            "milk",
+            "soy lecithin",
+            "cocoa",
+            "natural flavor",
+            "salt",
+            "vegetable oil",
+            "guar gum",
+            "carrageenan"
+        ],
+        "allergy_info": "may contain wheat, peanuts and other tree nuts",
+        "dietary_certifications": "Kosher",
+        "productId": "646"
+    },
+    {
+        "name": "Strawberry Fanta Milky",
+        "image_closed": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/strawberry-fanta-closed.png",
+        "image_open": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/strawberry-fanta-open.png",
+        "description": "Strawberry Ice Cream with Fanta. Yuck!",
+        "story": "Strawberry Pinky Fanta Milky yaya",
+        "sourcing_values": [
+            "Non-GMO",
+            "Cage-Free Eggs",
+            "Fairtrade",
+            "Responsibly Sourced Packaging",
+            "Caring Dairy"
+        ],
+        "ingredients": [
+            "cream",
+            "skim milk",
+            "liquid sugar",
+            "water",
+            "sugar",
+            "egg yolks",
+            "butter",
+            "strawberry extract",
+            "fanta",
+            "milk"
+        ],
+        "allergy_info": "May contain unusual ingredient mix, soda",
+        "dietary_certifications": "Kosher",
+        "productId": "123"
+    },
+    {
+        "name": "Chooco Oreo Flavor",
+        "image_closed": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/choco-oreo-closed.png",
+        "image_open": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/choco-oreo-open.png",
+        "description": "Oreo Oreo with Choco",
+        "story": "Chocolatos meet Oreo flavor give yourself a boost",
+        "sourcing_values": [
+            "Non-GMO",
+            "Cage-Free Eggs",
+            "Fairtrade",
+            "Responsibly Sourced Packaging",
+            "Caring Dairy"
+        ],
+        "ingredients": [
+            "cream",
+            "skim milk",
+            "liquid sugar",
+            "water",
+            "sugar",
+            "egg yolks",
+            "butter",
+            "oreo",
+            "chocolate bar",
+            "milk"
+        ],
+        "allergy_info": "contain too many chocolate",
+        "dietary_certifications": "Kosher",
+        "productId": "234"
+    },
+    {
+        "name": "Cheese and Creammy Touch",
+        "image_closed": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/cheese-cream-closed.png",
+        "image_open": "/files/live/sites/systemsite/files/flavors/products/us/pint/open-closed-pints/cheese-cream-open.png",
+        "description": "Cheese Cream Everywhere",
+        "story": "Cheese, Cream, take it with you",
+        "sourcing_values": [
+            "Non-GMO",
+            "Cage-Free Eggs",
+            "Fairtrade",
+            "Responsibly Sourced Packaging",
+            "Caring Dairy"
+        ],
+        "ingredients": [
+            "cream",
+            "skim milk",
+            "liquid sugar",
+            "water",
+            "sugar",
+            "egg yolks",
+            "butter",
+            "cheedar cheese",
+            "mozzarella cheese",
+            "milk"
+        ],
+        "allergy_info": "contain too many cheese",
+        "dietary_certifications": "Kosher",
+        "productId": "345"
+    }
+]
