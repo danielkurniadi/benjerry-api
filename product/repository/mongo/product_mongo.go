@@ -102,7 +102,7 @@ func (repo *ProductMongoRepo) Get(ctx context.Context, productID string) (domain
 	collection := repo.db.Collection(collectionName)
 	err := collection.FindOne(ctx, ProductModel{ProductID: productID}).Decode(&model)
 
-	return model.Product(), err
+	return model.Product(), translate(err)
 }
 
 // Create inserts a single product document into collection
@@ -112,7 +112,7 @@ func (repo *ProductMongoRepo) Create(ctx context.Context, product domain.Product
 	collection := repo.db.Collection(collectionName)
 	_, err := collection.InsertOne(ctx, model)
 
-	return err
+	return translate(err)
 }
 
 // Update modifies attribute of a single product document
@@ -125,7 +125,7 @@ func (repo *ProductMongoRepo) Update(ctx context.Context, productID string, prod
 	update := bson.M{"$set": model}
 	_, err := collection.UpdateOne(ctx, filter, update)
 
-	return err
+	return translate(err)
 }
 
 // Delete removes a single document from collection
@@ -134,5 +134,5 @@ func (repo *ProductMongoRepo) Delete(ctx context.Context, productID string) erro
 	filter := ProductModel{ProductID: productID}
 
 	_, err := collection.DeleteOne(ctx, filter)
-	return err
+	return translate(err)
 }
