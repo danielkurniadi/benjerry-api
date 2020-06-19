@@ -15,7 +15,7 @@ type ProductService struct {
 }
 
 // NewProductService creates new service
-// that manages resource in product repository
+// that provides use cases for product resource
 func NewProductService(productRepo domain.ProductRepository) *ProductService {
 	return &ProductService{
 		productRepo: productRepo,

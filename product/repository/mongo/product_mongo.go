@@ -36,7 +36,7 @@ type ProductMongoRepo struct {
 }
 
 // modelFromProduct creates new ProductModel and
-// copy product data from a data tranfer object into model's attributes
+// copy data from product entity to product DB model
 func modelFromProduct(product domain.Product) ProductModel {
 	return ProductModel{
 		ProductID:            product.ProductID,
@@ -52,7 +52,8 @@ func modelFromProduct(product domain.Product) ProductModel {
 	}
 }
 
-// Product yields data transfer object domain.Product
+// Product creates product entity instance and
+// copies data from model into product entity
 func (model *ProductModel) Product() domain.Product {
 	return domain.Product{
 		ProductID:            model.ProductID,
@@ -77,7 +78,7 @@ func NewProductRepo(client *mongo.Client, dbName string) *ProductMongoRepo {
 
 	collection := repo.db.Collection(collectionName)
 
-	// create unique index for product_id field
+	// create unique index constraint for productId field
 	collection.Indexes().CreateOne(
 		context.Background(),
 		mongo.IndexModel{
