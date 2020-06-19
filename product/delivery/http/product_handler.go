@@ -7,10 +7,11 @@ import (
 
 	ut "github.com/go-playground/universal-translator"
 	"github.com/gorilla/mux"
+	"github.com/justinas/alice"
 	"gopkg.in/go-playground/validator.v9"
 
+	validatorLib "github.com/iqdf/benjerry-service/common/validator"
 	"github.com/iqdf/benjerry-service/domain"
-	validatorLib "github.com/iqdf/benjerry-service/validator"
 )
 
 // productSingleResponse ...
@@ -131,12 +132,18 @@ func newSingleResponse(product domain.Product) productSingleResponse {
 }
 
 // Routes register handle func with the path url
-func (handler *ProductHandler) Routes(router *mux.Router) {
+func (handler *ProductHandler) Routes(router *mux.Router, middleware alice.Chain) {
+	// Register middleware here
+	getHandler := middleware.Then(handler.handleGetProduct())
+	updateHandler := middleware.Then(handler.handleUpdateProduct())
+	deleteHandler := middleware.Then(handler.handleDeleteProduct())
+	createHandler := middleware.Then(handler.handleCreateProduct())
+
 	// Register handler methods to router here...
-	router.HandleFunc("/{product_id}", handler.handleGetProduct()).Methods("GET")
-	router.HandleFunc("/{product_id}", handler.handleUpdateProduct()).Methods("PUT")
-	router.HandleFunc("/{product_id}", handler.handleDeleteProduct()).Methods("DELETE")
-	router.HandleFunc("/", handler.handleCreateProduct()).Methods("POST")
+	router.Handle("/{product_id}", getHandler).Methods("GET").Name("PRODUCT_GET")
+	router.Handle("/{product_id}", updateHandler).Methods("PUT").Name("PRODUCT_UPDATE")
+	router.Handle("/{product_id}", deleteHandler).Methods("DELETE").Name("PRODUCT_DELETE")
+	router.Handle("/", createHandler).Methods("POST").Name("PRODUCT_CREATE")
 }
 
 // handleGetProduct provides handler func that gets a product
@@ -249,7 +256,6 @@ func getErrorMessage(err error, trans ut.Translator) string {
 	if err == nil {
 		return ""
 	}
-
 	switch err.(type) {
 	case *json.UnmarshalTypeError:
 		e, _ := err.(*json.UnmarshalTypeError)
@@ -260,26 +266,27 @@ func getErrorMessage(err error, trans ut.Translator) string {
 		for _, e := range err.(validator.ValidationErrors) {
 			fieldErrs = append(fieldErrs, e.Translate(trans))
 		}
-		return strings.Join(fieldErrs, "\n")
+		return strings.Join(fieldErrs, "; ")
 	}
-
 	return err.Error()
 }
 
 // writerErrorMessage is a helper that writes error message to response
 func writeErrorMessage(writer http.ResponseWriter, errMsg string, httpStatus int) {
 	writer.WriteHeader(httpStatus)
-	json.NewEncoder(writer).Encode(MessageError{Message: errMsg})
+	json.NewEncoder(writer).Encode(
+		MessageError{Message: errMsg})
 }
 
 // getAppErrorStatus inputs error from application
 // and infers the appropriate HTTP status to be returned
 func getAppErrorStatus(err error) int {
+	var status int
+
 	if err == nil {
 		return http.StatusOK
 	}
 
-	var status int
 	switch err.(type) {
 	case *json.SyntaxError, *json.UnmarshalTypeError, *validator.ValidationErrors:
 		return http.StatusBadRequest
