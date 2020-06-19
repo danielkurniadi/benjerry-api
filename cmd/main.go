@@ -10,15 +10,25 @@ import (
 	"time"
 
 	"github.com/docopt/docopt-go"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
+	"github.com/justinas/alice"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	// "github.com/iqdf/benjerry-service/config"
+	"github.com/iqdf/benjerry-service/common/auth"
+	"github.com/iqdf/benjerry-service/common/middleware"
 	"github.com/iqdf/benjerry-service/domain"
+
 	productHTTP "github.com/iqdf/benjerry-service/product/delivery/http"
 	productMongo "github.com/iqdf/benjerry-service/product/repository/mongo"
-	"github.com/iqdf/benjerry-service/product/service"
+
+	userHTTP "github.com/iqdf/benjerry-service/user/delivery/http"
+	userMongo "github.com/iqdf/benjerry-service/user/repository/mongo"
+
+	productUC "github.com/iqdf/benjerry-service/product/service"
+	userUC "github.com/iqdf/benjerry-service/user/service"
 )
 
 const version = "1.0.0"
@@ -55,11 +65,17 @@ func main() {
 		err     error
 		command Command
 		// config        config.Config
-		dbConn         *mongo.Client
-		productRepo    domain.ProductRepository
+		dbConn      *mongo.Client
+		productRepo domain.ProductRepository
+		userRepo    domain.UserRepository
+
 		productService domain.ProductService
-		rootRouter     *mux.Router
-		productRouter  *mux.Router
+		userService    domain.UserService
+		authService    *auth.Service
+
+		rootRouter    *mux.Router
+		productRouter *mux.Router
+		userRouter    *mux.Router
 	)
 
 	command = parseCommand()
@@ -72,8 +88,8 @@ func main() {
 	}
 
 	// Setup database connection here ...
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, cancelMongo := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelMongo()
 
 	mongoOpt := options.Client().ApplyURI("mongodb://localhost:27017")
 	dbConn, err = mongo.Connect(ctx, mongoOpt)
@@ -82,17 +98,36 @@ func main() {
 		panic("unable to connect to mongodb")
 	}
 
+	ctx, cancelRedis := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelRedis()
+
+	redisConn, err := redis.DialURL("redis://localhost:6379")
+	if err != nil {
+		panic(err)
+	}
+
 	// Setup repositories here ...
 	productRepo = productMongo.NewProductRepo(dbConn, "tutorialDB") // benjerry
+	userRepo = userMongo.NewUserRepo(dbConn, "tutorialDB")
 
 	// Instantiate services here ...
-	productService = service.NewProductService(productRepo)
+	productService = productUC.NewProductService(productRepo)
+	userService = userUC.NewUserService("benjerry", userRepo)
+	authService = auth.NewAuthService("secret", redisConn)
+
+	// Setup Middleware here ....
+	authMiddleware := middleware.AuthMiddleWare(authService)
+	roleMiddleware := middleware.RoleMiddleWare("benjerry")
+	middlewareChain := alice.New(authMiddleware, roleMiddleware)
 
 	// Register routings here ...
 	rootRouter = mux.NewRouter()
 	productRouter = rootRouter.PathPrefix("/api/products").Subrouter()
+	userRouter = rootRouter.PathPrefix("/api/users").Subrouter()
 
-	productHTTP.NewProductHandler(productService).Routes(productRouter)
+	sessionExpiry := 480 * time.Second
+	productHTTP.NewProductHandler(productService).Routes(productRouter, middlewareChain)
+	userHTTP.NewUserHandler(userService, authService, sessionExpiry).Routes(userRouter)
 
 	server := &http.Server{
 		Addr:         "0.0.0.0:8080",
@@ -117,8 +152,8 @@ func main() {
 	// Block until we receive our signal.
 	<-c
 
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	ctx, cancelRun := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancelRun()
 
 	server.Shutdown(ctx)
 
