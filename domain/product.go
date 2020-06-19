@@ -20,16 +20,16 @@ type Product struct {
 
 // ProductService ...
 type ProductService interface {
-	GetProduct(context.Context, string) (Product, error)
-	CreateProduct(context.Context, Product) error
-	UpdateProduct(context.Context, string, Product) error
-	DeleteProduct(context.Context, string) error
+	GetProduct(ctx context.Context, productID string) (Product, error)
+	CreateProduct(ctx context.Context, product Product) error
+	UpdateProduct(ctx context.Context, productID string, product Product) error
+	DeleteProduct(ctx context.Context, productID string) error
 }
 
 // ProductRepository ...
 type ProductRepository interface {
-	Create(context.Context, Product) error
-	Get(context.Context, string) (Product, error)
-	Update(context.Context, string, Product) error
-	Delete(context.Context, string) error
+	Create(ctx context.Context, product Product) error
+	Get(ctx context.Context, productID string) (Product, error)
+	Update(ctx context.Context, productID string, product Product) error
+	Delete(ctx context.Context, productID string) error
 }
