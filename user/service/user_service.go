@@ -41,7 +41,7 @@ func (service *UserService) LoginUser(ctx context.Context, username, rawpass str
 
 	if !comparePasswords(user.HashPassword, []byte(rawpass)) {
 		log.Printf("cmp password | username %s, hash %s, raw %s", user.Username, user.HashPassword, rawpass)
-		return domain.User{}, err
+		return domain.User{}, domain.ErrAuthFail
 	}
 
 	return user, nil
@@ -64,6 +64,7 @@ func (service *UserService) RegisterUser(ctx context.Context, username, rawpass 
 
 	if isAdmin {
 		authorizations = []auth.Authorization{
+			{AppName: service.appName, Role: role.ReadPermission},
 			{AppName: service.appName, Role: role.WritePermission},
 			{AppName: service.appName, Role: role.DeletePermission},
 		}
