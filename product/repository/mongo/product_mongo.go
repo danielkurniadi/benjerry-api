@@ -3,13 +3,14 @@ package mongo
 import (
 	"context"
 
-	"github.com/iqdf/benjerry-service/domain"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
+
+	mongoHelper "github.com/iqdf/benjerry-service/common/repository/mongo"
+	"github.com/iqdf/benjerry-service/domain"
 )
 
 const collectionName = "IceCream" // products
@@ -103,7 +104,7 @@ func (repo *ProductMongoRepo) Get(ctx context.Context, productID string) (domain
 	collection := repo.db.Collection(collectionName)
 	err := collection.FindOne(ctx, ProductModel{ProductID: productID}).Decode(&model)
 
-	return model.Product(), translate(err)
+	return model.Product(), mongoHelper.TranslateError(err)
 }
 
 // Create inserts a single product document into collection
@@ -113,7 +114,7 @@ func (repo *ProductMongoRepo) Create(ctx context.Context, product domain.Product
 	collection := repo.db.Collection(collectionName)
 	_, err := collection.InsertOne(ctx, model)
 
-	return translate(err)
+	return mongoHelper.TranslateError(err)
 }
 
 // Update modifies attribute of a single product document
@@ -126,7 +127,7 @@ func (repo *ProductMongoRepo) Update(ctx context.Context, productID string, prod
 	update := bson.M{"$set": model}
 	_, err := collection.UpdateOne(ctx, filter, update)
 
-	return translate(err)
+	return mongoHelper.TranslateError(err)
 }
 
 // Delete removes a single document from collection
@@ -135,5 +136,5 @@ func (repo *ProductMongoRepo) Delete(ctx context.Context, productID string) erro
 	filter := ProductModel{ProductID: productID}
 
 	_, err := collection.DeleteOne(ctx, filter)
-	return translate(err)
+	return mongoHelper.TranslateError(err)
 }
