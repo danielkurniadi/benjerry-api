@@ -3,12 +3,14 @@ package mongo
 import (
 	"context"
 
-	"github.com/iqdf/benjerry-service/common/auth"
-	"github.com/iqdf/benjerry-service/domain"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
+
+	"github.com/iqdf/benjerry-service/common/auth"
+	mongoHelper "github.com/iqdf/benjerry-service/common/repository/mongo"
+	"github.com/iqdf/benjerry-service/domain"
 )
 
 const collectionName = "User"
@@ -74,7 +76,7 @@ func (repo *UserMongoRepo) Get(ctx context.Context, username string) (domain.Use
 
 	collection := repo.db.Collection(collectionName)
 	err := collection.FindOne(ctx, UserModel{Username: username}).Decode(&model)
-	return model.User(), translate(err)
+	return model.User(), mongoHelper.TranslateError(err)
 }
 
 // Create inserts a single user document into collection
@@ -84,5 +86,5 @@ func (repo *UserMongoRepo) Create(ctx context.Context, user domain.User) error {
 	collection := repo.db.Collection(collectionName)
 	_, err := collection.InsertOne(ctx, model)
 
-	return translate(err)
+	return mongoHelper.TranslateError(err)
 }
