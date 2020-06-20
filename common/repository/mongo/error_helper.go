@@ -22,7 +22,9 @@ func checkWriteDuplicateError(dbError error) bool {
 	return RegexpDuplicateError.Match([]byte(dbError.Error()))
 }
 
-func translate(dbError error) error {
+// TranslateError converts mongo DB error into
+// approriate application errors
+func TranslateError(dbError error) error {
 	if dbError == nil {
 		return nil
 	}
