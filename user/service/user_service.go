@@ -35,12 +35,12 @@ func (service *UserService) LoginUser(ctx context.Context, username, rawpass str
 
 	user, err := service.userRepo.Get(ctx, username)
 	if err == domain.ErrResourceNotFound {
-		log.Printf("db notfound | username %s, hash %s, raw%s", username, user.HashPassword, rawpass)
 		return domain.User{}, err
+	} else if err != nil {
+		return domain.User{}, domain.ErrInternalServerError
 	}
 
 	if !comparePasswords(user.HashPassword, []byte(rawpass)) {
-		log.Printf("cmp password | username %s, hash %s, raw %s", user.Username, user.HashPassword, rawpass)
 		return domain.User{}, domain.ErrAuthFail
 	}
 
@@ -80,6 +80,7 @@ func (service *UserService) RegisterUser(ctx context.Context, username, rawpass 
 		HashPassword:   hashpass,
 		Authorizations: authorizations,
 	}
+
 	err = service.userRepo.Create(ctx, user)
 	return err
 }
