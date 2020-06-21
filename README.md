@@ -107,9 +107,9 @@ $ make compose-stop
 ```
 
 ## TO DO Work and Features
-[ x ] Refactor auth and role middleware. Issue 
-[ x ] Tests: Middlewares, Auth Service, and Database layer. Issue 
-[ x ] Documentations: APi Schema, Software architecture design.
+- [ ] Refactor auth and role middleware. Issue #5
+- [ ] Tests: Middlewares, Auth Service, and Database layer. Issue #6 #7
+- [ ] Documentations: APi Schema, Software architecture design. Issue #1 #2 #3 #4
 
 ## Tools Used:
 In this project, I use some tools listed below. But you can use any simmilar library that have the same purposes. But, well, different library will have different implementation type. Just be creative and use anything that you really need. 
