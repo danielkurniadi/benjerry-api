@@ -111,6 +111,14 @@ func (repo *ProductMongoRepo) Get(ctx context.Context, productID string) (domain
 func (repo *ProductMongoRepo) Create(ctx context.Context, product domain.Product) error {
 	var model = modelFromProduct(product)
 
+	if model.Ingredients == nil {
+		model.Ingredients = &[]string{}
+	}
+
+	if model.SourcingValues == nil {
+		model.SourcingValues = &[]string{}
+	}
+
 	collection := repo.db.Collection(collectionName)
 	_, err := collection.InsertOne(ctx, model)
 
