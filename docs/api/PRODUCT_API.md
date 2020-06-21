@@ -2,11 +2,9 @@
 
 This documenation includes all API endpoints for CRUD Ben & Jerry products.
 
-Notes:
-
-- Timestamp used is in seconds. (i.e. need to times with 1000 in JavaScript)
-- Every failed request is expected to be responded with an `error_message` field. For example:
-
+> Notes:
+> - Timestamp used is in seconds. (i.e. need to times with 1000 in JavaScript)
+> - Every failed request is expected to be responded with an `error_message` field. For example:
 ```json
 {
   "Message": "Insufficient permissions"
@@ -20,7 +18,14 @@ Notes:
 
 Permission Level: Read Permission, all member.
 
-#### Response
+### Request 
+
+#### Cookie:
+| Name                  | Value                 | Description
+| -----------------     | --------              | -----------
+| `session_token`       | `String`              | UUID v4 session token 
+
+### Response
 
 ##### No Error
 `HTTP 200 OK`
@@ -78,13 +83,15 @@ Permission Level: Read Permission, all member.
 
 Permission Level: Write Permission, admin only.
 
-#### Request
+### Request
 
-*Header*: 
-```
-"session_token=02041fd4-c086-4e54-b931-be55a6043bd9"
-```
-*Body:*
+#### Cookie:
+
+| Name                  | Value                 | Description
+| -----------------     | --------              | -----------
+| `session_token`       | `String`              | UUID v4 session token 
+
+#### Body:
 ```json
 {
   "name": "Vanilla Toffee Bar Crunch",
@@ -126,7 +133,7 @@ Permission Level: Write Permission, admin only.
 }
 ```
 
-#### Response
+### Response
 
 ##### No Error
 `HTTP 201 CREATED`
@@ -144,13 +151,15 @@ Permission Level: Write Permission, admin only.
 
 Permission Level: Edit Permission, admin only.
 
-#### Request
+### Request
 
-*Header*: 
-```
-"session_token=02041fd4-c086-4e54-b931-be55a6043bd9"
-```
-*Body:*
+#### Cookie:
+
+| Name                  | Value                 | Description
+| -----------------     | --------              | -----------
+| `session_token`       | `String`              | UUID v4 session token 
+
+##### Body:
 ```json
 {
   "description": "Edited: Mactha Vanilla Toffe Bar? Why not!",
@@ -164,7 +173,7 @@ Permission Level: Edit Permission, admin only.
 > Note: The request body fields for `PUT` are similar to `POST` Create Body. However, the `PUT` are flexible, you only specify field(s) that you wanted to update. `productID` fields cannot be updated. 
 
 
-#### Response
+### Response
 
 ##### No Error
 `HTTP 200 OK`
@@ -181,7 +190,14 @@ Permission Level: Edit Permission, admin only.
 
 Permission Level: Delete Permission, admin only.
 
-#### Response
+### Request
+
+#### Cookie
+| Name                  | Value                 | Description
+| -----------------     | --------              | -----------
+| `session_token`       | `String`              | UUID v4 session token 
+
+### Response
 
 ##### No Error
 `HTTP 200 OK`
