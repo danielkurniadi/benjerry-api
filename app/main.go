@@ -18,6 +18,7 @@ import (
 
 	// "github.com/iqdf/benjerry-service/config"
 	"github.com/iqdf/benjerry-service/common/auth"
+	"github.com/iqdf/benjerry-service/common/config"
 	"github.com/iqdf/benjerry-service/common/middleware"
 	"github.com/iqdf/benjerry-service/domain"
 
@@ -45,7 +46,7 @@ Options:
 // Command ...
 type Command struct {
 	Run     bool
-	Port    int    `docopt:"--port"`
+	Port    string `docopt:"--port"`
 	Host    string `docopt:"--host"`
 	Version bool
 }
@@ -57,6 +58,7 @@ func parseCommand() Command {
 	// retrieve args & options
 	opts, _ := docopt.ParseDoc(usage)
 	opts.Bind(&command)
+
 	return command
 }
 
@@ -87,11 +89,16 @@ func main() {
 		return
 	}
 
+	appconfig := config.Get(config.BENJERRY, command.Host, command.Port)
+	config.PrintConfig(appconfig)
+
+	appname := string(appconfig.AppName)
+
 	// Setup database connection here ...
 	ctx, cancelMongo := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelMongo()
 
-	mongoOpt := options.Client().ApplyURI("mongodb://localhost:27017")
+	mongoOpt := options.Client().ApplyURI(appconfig.DatabaseURI)
 	dbConn, err = mongo.Connect(ctx, mongoOpt)
 
 	if err != nil {
@@ -101,23 +108,23 @@ func main() {
 	ctx, cancelRedis := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelRedis()
 
-	redisConn, err := redis.DialURL("redis://localhost:6379")
+	redisConn, err := redis.DialURL(appconfig.RedisURI)
 	if err != nil {
 		panic(err)
 	}
 
 	// Setup repositories here ...
-	productRepo = productMongo.NewProductRepo(dbConn, "tutorialDB") // benjerry
-	userRepo = userMongo.NewUserRepo(dbConn, "tutorialDB")
+	productRepo = productMongo.NewProductRepo(dbConn, appconfig.DatabaseName) // benjerry
+	userRepo = userMongo.NewUserRepo(dbConn, appconfig.DatabaseName)
 
 	// Instantiate services here ...
 	productService = productUC.NewProductService(productRepo)
-	userService = userUC.NewUserService("benjerry", userRepo)
-	authService = auth.NewAuthService("secret", redisConn)
+	userService = userUC.NewUserService(appname, userRepo)
+	authService = auth.NewAuthService(redisConn)
 
 	// Setup Middleware here ....
 	authMiddleware := middleware.AuthMiddleWare(authService)
-	roleMiddleware := middleware.RoleMiddleWare("benjerry")
+	roleMiddleware := middleware.RoleMiddleWare(appname)
 	middlewareChain := alice.New(authMiddleware, roleMiddleware)
 
 	// Register routings here ...
@@ -130,7 +137,7 @@ func main() {
 	userHTTP.NewUserHandler(userService, authService, sessionExpiry).Routes(userRouter)
 
 	server := &http.Server{
-		Addr:         "0.0.0.0:8080",
+		Addr:         appconfig.AppAddress(),
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
