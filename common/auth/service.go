@@ -16,14 +16,12 @@ type CreateTokenData struct {
 
 // Service ...
 type Service struct {
-	secret string
 	cache  redis.Conn
 }
 
 // NewAuthService ...
-func NewAuthService(secret string, redisConn redis.Conn) *Service {
+func NewAuthService(redisConn redis.Conn) *Service {
 	return &Service{
-		secret: secret,
 		cache:  redisConn,
 	}
 }
