@@ -102,7 +102,7 @@ func main() {
 	dbConn, err = mongo.Connect(ctx, mongoOpt)
 
 	if err != nil {
-		panic("unable to connect to mongodb")
+		panic("unable to connect to mongodb: " + err.Error())
 	}
 
 	ctx, cancelRedis := context.WithTimeout(context.Background(), 10*time.Second)
@@ -110,7 +110,7 @@ func main() {
 
 	redisConn, err := redis.DialURL(appconfig.RedisURI)
 	if err != nil {
-		panic(err)
+		panic("unable to connect to redis: " + err.Error())
 	}
 
 	// Setup repositories here ...
