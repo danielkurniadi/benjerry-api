@@ -3,12 +3,9 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
-	ut "github.com/go-playground/universal-translator"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
-	"gopkg.in/go-playground/validator.v9"
 
 	validatorLib "github.com/iqdf/benjerry-service/common/validator"
 	"github.com/iqdf/benjerry-service/domain"
@@ -16,29 +13,24 @@ import (
 
 // productSingleResponse ...
 type productSingleResponse struct {
-	Data productData `json:"product"`
+	Data productResponseData `json:"product"`
 }
 
-// productMultiResponse ...
-type productMultiResponse struct {
-	Data []productData `json:"products"`
-}
-
-type productData struct {
+type productResponseData struct {
 	ProductID            string    `json:"productId"`
 	Name                 string    `json:"name"`
 	ImageClosedURL       string    `json:"image_closed"`
 	ImageOpenURL         string    `json:"image_open"`
 	Description          string    `json:"description"`
 	Story                string    `json:"story"`
-	SourcingValues       *[]string `json:"sourcing_values"`
-	Ingredients          *[]string `json:"ingredients"`
+	SourcingValues       *[]string `json:"sourcing_values,omitempty"`
+	Ingredients          *[]string `json:"ingredients,omitempty"`
 	AllergyInfo          string    `json:"allergy_info"`
 	DietaryCertification string    `json:"dietary_certifications"`
 }
 
-// MessageError ....
-type MessageError struct {
+// messageError ....
+type messageError struct {
 	Message string `json:"message"`
 }
 
@@ -47,24 +39,24 @@ type productCreateRequest struct {
 	Name                 string    `json:"name" validate:"required,ascii,max=50"`
 	ImageClosedURL       string    `json:"image_closed" validate:"omitempty,uri"`
 	ImageOpenURL         string    `json:"image_open" validate:"omitempty,uri"`
-	Description          string    `json:"description" validate:"ascii,max=100"`
-	Story                string    `json:"story" validate:"omitempty,ascii,max=300"`
+	Description          string    `json:"description" validate:"required,max=100"`
+	Story                string    `json:"story" validate:"omitempty,max=300"`
 	SourcingValues       *[]string `json:"sourcing_values"`
 	Ingredients          *[]string `json:"ingredients"`
-	AllergyInfo          string    `json:"allergy_info" validate:"omitempty,ascii,max=50"`
-	DietaryCertification string    `json:"dietary_certifications" validate:"omitempty,ascii,max=25"`
+	AllergyInfo          string    `json:"allergy_info" validate:"required,max=50"`
+	DietaryCertification string    `json:"dietary_certifications" validate:"required,max=25"`
 }
 
 type productUpdateRequest struct {
 	Name                 string    `json:"name" validate:"omitempty,ascii,max=50"`
 	ImageClosedURL       string    `json:"image_closed" validate:"omitempty,uri"`
 	ImageOpenURL         string    `json:"image_open" validate:"omitempty,uri"`
-	Description          string    `json:"description" validate:"omitempty,ascii,max=100"`
-	Story                string    `json:"story" validate:"omitempty,ascii,max=300"`
-	SourcingValues       *[]string `json:"sourcing_values"`
-	Ingredients          *[]string `json:"ingredients"`
-	AllergyInfo          string    `json:"allergy_info" validate:"omitempty,ascii,max=50"`
-	DietaryCertification string    `json:"dietary_certifications" validate:"omitempty,ascii,max=25"`
+	Description          string    `json:"description" validate:"omitempty,max=100"`
+	Story                string    `json:"story" validate:"omitempty,max=300"`
+	SourcingValues       *[]string `json:"sourcing_values" validate:"omitempty"`
+	Ingredients          *[]string `json:"ingredients" validate:"omitempty"`
+	AllergyInfo          string    `json:"allergy_info" validate:"omitempty,max=50"`
+	DietaryCertification string    `json:"dietary_certifications" validate:"omitempty,max=25"`
 }
 
 func createToProduct(requestData productCreateRequest) domain.Product {
@@ -98,25 +90,20 @@ func updateToProduct(requestData productUpdateRequest) domain.Product {
 
 // ProductHandler ...
 type ProductHandler struct {
-	service  domain.ProductService
-	validate *validator.Validate
-	trans    ut.Translator
+	service domain.ProductService
 }
 
 // NewProductHandler creates new HTTP handler
 // for product related request
 func NewProductHandler(service domain.ProductService) *ProductHandler {
-	validate, trans := validatorLib.NewValidator()
 	handler := &ProductHandler{
-		service:  service,
-		validate: validate,
-		trans:    trans,
+		service: service,
 	}
 	return handler
 }
 
 func newSingleResponse(product domain.Product) productSingleResponse {
-	productData := productData{
+	productData := productResponseData{
 		ProductID:            product.ProductID,
 		Name:                 product.Name,
 		ImageClosedURL:       product.ImageClosedURL,
@@ -158,7 +145,7 @@ func (handler *ProductHandler) handleGetProduct() http.HandlerFunc {
 		product, err := handler.service.GetProduct(r.Context(), productID)
 
 		if err != nil {
-			status := getAppErrorStatus(err)
+			status := getResponseStatus(err)
 			writeErrorMessage(w, err.Error(), status)
 			return
 		}
@@ -175,15 +162,9 @@ func (handler *ProductHandler) handleCreateProduct() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		var productCreate productCreateRequest
-		if err := json.NewDecoder(r.Body).Decode(&productCreate); err != nil {
-			msg := getErrorMessage(err, handler.trans)
-			writeErrorMessage(w, msg, http.StatusBadRequest)
-			return
-		}
-
-		if errs := handler.validate.Struct(productCreate); errs != nil {
-			msg := getErrorMessage(errs, handler.trans)
-			writeErrorMessage(w, msg, http.StatusBadRequest)
+		if err := validatorLib.DecodeAndValidateJSON(r.Body, &productCreate); err != nil {
+			verr, _ := err.(*validatorLib.ValidationError)
+			writeErrorMessage(w, verr.Message(), http.StatusBadRequest)
 			return
 		}
 
@@ -191,7 +172,7 @@ func (handler *ProductHandler) handleCreateProduct() http.HandlerFunc {
 		err := handler.service.CreateProduct(r.Context(), product)
 
 		if err != nil {
-			status := getAppErrorStatus(err)
+			status := getResponseStatus(err)
 			writeErrorMessage(w, err.Error(), status)
 			return
 		}
@@ -209,20 +190,20 @@ func (handler *ProductHandler) handleUpdateProduct() http.HandlerFunc {
 		productID := params["product_id"]
 
 		var productUpdate productUpdateRequest
-		if err := json.NewDecoder(r.Body).Decode(&productUpdate); err != nil {
-			msg := getErrorMessage(err, handler.trans)
-			writeErrorMessage(w, msg, http.StatusBadRequest)
+		if err := validatorLib.ValidateJSON(r.Body, &productUpdate); err != nil {
+			verr, _ := err.(*validatorLib.ValidationError)
+			writeErrorMessage(w, verr.Message(), http.StatusBadRequest)
 			return
 		}
 
 		var product = updateToProduct(productUpdate)
 		product.ProductID = productID
+
 		err := handler.service.UpdateProduct(r.Context(), productID, product)
 
 		if err != nil {
-			status := getAppErrorStatus(err)
-			msg := getErrorMessage(err, handler.trans)
-			writeErrorMessage(w, msg, status)
+			status := getResponseStatus(err)
+			writeErrorMessage(w, err.Error(), status)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -241,64 +222,36 @@ func (handler *ProductHandler) handleDeleteProduct() http.HandlerFunc {
 		err := handler.service.DeleteProduct(r.Context(), productID)
 
 		if err != nil {
-			status := getAppErrorStatus(err)
-			msg := getErrorMessage(err, handler.trans)
-			writeErrorMessage(w, msg, status)
+			status := getResponseStatus(err)
+			writeErrorMessage(w, err.Error(), status)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// getErrorMessage infers the error struct type
-// and translates the error message to get client-friendly message
-func getErrorMessage(err error, trans ut.Translator) string {
-	if err == nil {
-		return ""
-	}
-	switch err.(type) {
-	case *json.UnmarshalTypeError:
-		e, _ := err.(*json.UnmarshalTypeError)
-		return e.Field + " field must be of type " + e.Type.String()
-
-	case validator.ValidationErrors:
-		var fieldErrs []string
-		for _, e := range err.(validator.ValidationErrors) {
-			fieldErrs = append(fieldErrs, e.Translate(trans))
-		}
-		return strings.Join(fieldErrs, "; ")
-	}
-	return err.Error()
-}
-
 // writerErrorMessage is a helper that writes error message to response
 func writeErrorMessage(writer http.ResponseWriter, errMsg string, httpStatus int) {
 	writer.WriteHeader(httpStatus)
-	json.NewEncoder(writer).Encode(
-		MessageError{Message: errMsg})
+	json.NewEncoder(writer).
+		Encode(messageError{Message: errMsg})
 }
 
-// getAppErrorStatus inputs error from application
+// getResponseStatus inputs error from application
 // and infers the appropriate HTTP status to be returned
-func getAppErrorStatus(err error) int {
-	var status int
-
-	if err == nil {
+func getResponseStatus(err error) int {
+	switch err {
+	case nil:
 		return http.StatusOK
-	}
-
-	switch err.(type) {
-	case *json.SyntaxError, *json.UnmarshalTypeError, *validator.ValidationErrors:
+	case domain.ErrAuthFail, domain.ErrExpiredToken:
+		return http.StatusUnauthorized
+	case domain.ErrBadParamInput:
 		return http.StatusBadRequest
+	case domain.ErrConflict:
+		return http.StatusOK
+	case domain.ErrResourceNotFound:
+		return http.StatusNotFound
+	default:
+		return http.StatusInternalServerError
 	}
-
-	if err == domain.ErrResourceNotFound { // TODO: check against error
-		status = http.StatusNotFound
-	} else if err == domain.ErrConflict {
-		status = http.StatusConflict
-	} else {
-		status = http.StatusInternalServerError
-	}
-
-	return status
 }
