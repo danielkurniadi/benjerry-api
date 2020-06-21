@@ -17,10 +17,10 @@ const collectionName = "User"
 
 // UserModel ...
 type UserModel struct {
-	ID            primitive.ObjectID    `bson:"_id,omitempty"`
-	Username      string                `bson:"username,omitempty"`
-	HashPassword  string                `bson:"hashpassword,omitempty"`
-	Authorization *[]auth.Authorization `bson:"authorizations,omitempty"`
+	ID            primitive.ObjectID   `bson:"_id,omitempty"`
+	Username      string               `bson:"username,omitempty"`
+	HashPassword  string               `bson:"hashpassword,omitempty"`
+	Authorization []auth.Authorization `bson:"authorizations,omitempty"`
 }
 
 // UserMongoRepo ...
@@ -35,7 +35,7 @@ func modelFromUser(user domain.User) UserModel {
 	return UserModel{
 		Username:      user.Username,
 		HashPassword:  user.HashPassword,
-		Authorization: &user.Authorizations,
+		Authorization: user.Authorizations,
 	}
 }
 
@@ -45,7 +45,7 @@ func (model *UserModel) User() domain.User {
 	return domain.User{
 		Username:       model.Username,
 		HashPassword:   model.HashPassword,
-		Authorizations: *model.Authorization,
+		Authorizations: model.Authorization,
 	}
 }
 
